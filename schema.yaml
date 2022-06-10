@@ -39,7 +39,6 @@ variableGroups:
 - title: Networking Setup
   visible: 
       and:
-        - show_advanced
         - use_existing_networking
   variables:
     - vcnCompartment
