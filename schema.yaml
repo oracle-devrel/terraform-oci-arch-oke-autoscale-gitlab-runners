@@ -1,5 +1,5 @@
-title: "Gitlab runners on OKE."
-stackDescription: "Gitlab runner deployment on OKE cluster with node pool autoscaling." 
+title: "Deploy GitLab Runners on Oracle Container Engine for Kubernetes with autoscaling."
+stackDescription: "Deploy GitLab Runners on Oracle Container Engine for Kubernetes with autoscaling." 
 description: "This stack creates an OKE cluster with node pool autoscaling. Gitlab runner is deployed on created OKE cluster."
 schemaVersion: 1.1.0
 version: "20190404"
@@ -36,14 +36,6 @@ variableGroups:
     - servicesSubnetCompartment
     - services_subnet_id
     
-# - title: Bastion setup
-#   visible: true
-#   variables:
-#     - bastion_hostname
-#     - bastion_ad
-#     - bastion_fd
-#     - bastion_ssh_public_key
-
 - title: OKE cluster setup
   visible: true
   variables:
