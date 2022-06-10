@@ -1,0 +1,316 @@
+title: "Deploy GitLab Runners on Oracle Container Engine for Kubernetes with autoscaling."
+stackDescription: "Deploy GitLab Runners on Oracle Container Engine for Kubernetes with autoscaling." 
+description: "This stack creates an OKE cluster with node pool autoscaling. Gitlab runner is deployed on created OKE cluster."
+schemaVersion: 1.1.0
+version: "20190404"
+locale: "en"
+
+#################
+# Variable Groups
+#################
+variableGroups:
+
+- title: Resource placing
+  visible: true  
+  variables:
+    - compartment_id
+    - use_existing_networking
+
+- title: Gitlab Runner Setup
+  visible: true  
+  variables:
+    - gitlab_runner_instances
+    - gitlab_runner_namespace
+    - gitlab_runner_token
+
+
+- title: Networking Setup
+  visible: ${use_existing_networking}
+  variables:
+    - vcnCompartment
+    - vcn_id
+    - endpointSubnetCompartment
+    - endpoint_subnet_id
+    - workersSubnetCompartment
+    - workers_subnet_id
+    - servicesSubnetCompartment
+    - services_subnet_id
+    
+- title: OKE cluster setup
+  visible: true
+  variables:
+    - cluster_name
+    - kubernetes_version
+    - oke_public_endpoint
+    - is_kubernetes_dashboard_enabled
+
+- title: Worker nodes setup
+  visible: true
+  variables:
+    - pool_name
+    - worker_public_key
+    - worker_shape
+    - worker_flex_memory
+    - worker_flex_ocpu
+    - worker_bv_size
+    - worker_image_id
+
+- title: OKE worker pool autoscaler setup
+  visible: true
+  variables:
+    - min_number_of_nodes
+    - max_number_of_nodes
+
+- title: Internal Variables
+  visible: false
+  variables:
+    - region
+    - tenancy_ocid
+    - compartment_ocid
+    - worker_default_image_name
+    - network_cidrs
+
+######################
+# Variable Definitions
+######################
+
+variables:
+
+# Required
+
+  compartment_id: 
+    type: oci:identity:compartment:id
+    title: "Select the compartment where to deploy resources"
+    description: "Compartment where all resources reated to this deployment will be created."
+    required: true
+
+  use_existing_networking:
+    type: boolean
+    title: "Use existing network resources?"
+    description: "Leave this option uncheck and networking resources will be created automatically."
+    visible: true
+    default: false
+  
+  vcnCompartment: 
+    type: oci:identity:compartment:id
+    title: "Select existing VCN compartment"
+    required: true
+
+  vcn_id:
+    type: oci:core:vcn:id
+    title: "Select VCN to use for OKE resources"
+    description: "VCN to use for OKE resources"
+    required: true
+    dependsOn:
+      compartmentId: ${vcnCompartment}
+  
+  endpointSubnetCompartment:
+    type: oci:identity:compartment:id
+    title: "Select compartment of existing public subnet where OKE endpoint should be deployed"
+    required: true
+  
+  endpoint_subnet_id:
+    type: oci:core:subnet:id
+    title: "Select subnet where to deploy OKE endpoint"
+    description: "Subnet where to deploy OKE endpoint"
+    required: true
+    dependsOn:
+      compartmentId: ${endpointSubnetCompartment}
+      vcnId: ${vcn_id}
+  
+  workersSubnetCompartment:
+    type: oci:identity:compartment:id
+    title: "Select compartment of existing subnet where worker nodes should be deployed"
+    required: true
+  
+  workers_subnet_id:
+    type: oci:core:subnet:id
+    title: "Select subnet where worker nodes will be deployed"
+    description: "Subnet where worker nodes will be deployed"
+    required: true
+    dependsOn:
+      compartmentId: ${workersSubnetCompartment}
+      vcnId: ${vcn_id}
+
+  servicesSubnetCompartment:
+    type: oci:identity:compartment:id
+    title: "Select compartment of existing subnet where OKE services should be deployed"
+    required: true
+  
+  services_subnet_id:
+    type: oci:core:subnet:id
+    title: "Select subnet where OKE services will be deployed"
+    description: "Subnet where OKE services will be deployed"
+    required: true
+    dependsOn:
+      compartmentId: ${servicesSubnetCompartment}
+      vcnId: ${vcn_id}
+
+  cluster_name:
+    type: string
+    title: "Set OKE cluster name"
+    description: "OKE cluster name"
+    minLength: 1
+    maxLength: 255
+    pattern: "^[a-zA-Z0-9_-]+$"
+    required: true
+
+  kubernetes_version:
+    type: enum
+    title: "Select Kubernetes version"
+    description: "Kubernetes version to be deployed"
+    default: "v1.22.5"
+    enum:
+      - v1.22.5
+      - v1.21.5
+
+  oke_public_endpoint:
+    type: boolean
+    title: "Is OKE endpoint public?"
+    description: "Required to be set to true for gitlab runners deployment"
+    default: true
+    required: true
+
+  is_kubernetes_dashboard_enabled:
+    type: boolean
+    title: "Enable OKE dashboard?"
+    description: "OKE dashboard status"
+    default: true
+    required: true
+
+  pool_name:
+    type: string
+    title: "Set worker nodes pool name"
+    description: "Name for pool of Kubernetes worker nodes"
+    minLength: 1
+    maxLength: 255
+    pattern: "^[a-zA-Z0-9_-]+$"
+    required: true
+  
+  worker_shape:
+    type: oci:core:instanceshape:name
+    title: "Select compute shape to use for worker nodes"
+    description: "Compute shape to use for worker nodes"
+    required: true
+    dependsOn:
+      compartmentId: ${compartment_id}
+
+  worker_flex_ocpu:
+    type: integer
+    title: "Set ammount of OCPUs per worker node"
+    description: "Ammount of OCPUs per worker node"
+    minimum: 1
+    maximum: 64
+    default: 2
+    required: true
+    visible:
+      or:
+        - eq:
+          - worker_shape
+          - "VM.Standard.E3.Flex"
+        - eq:
+          - worker_shape
+          - "VM.Standard.E4.Flex"
+        - eq:
+          - worker_shape
+          - "VM.Standard.A1.Flex"
+
+  worker_flex_memory:
+    type: integer
+    title: "Set ammount of RAM Memory in GB per worker node"
+    description: "Ammount of RAM Memory in GB per worker node"
+    minimum: 1
+    maximum: 1024
+    default: 8
+    required: true
+    visible:
+      or:
+        - eq:
+          - worker_shape
+          - "VM.Standard.E3.Flex"
+        - eq:
+          - worker_shape
+          - "VM.Standard.E4.Flex"
+        - eq:
+          - worker_shape
+          - "VM.Standard.A1.Flex"
+
+  worker_bv_size:
+    type: integer
+    title: "Set worker node boot volume size in GB"
+    description: "Worker node boot volume size in GB"
+    minimum: 50
+    maximum: 1000
+    default: 50
+    required: true
+
+  
+  worker_image_id:
+    type: oci:core:image:id
+    title: "Select image to use for worker nodes"
+    description: "OS image to use for worker nodes"
+    required: true
+    dependsOn:
+      compartmentId: ${compartment_id}
+      shape: ${worker_shape}
+      operatingSystem: "Oracle Linux" 
+
+  worker_public_key:
+    type: oci:core:ssh:publickey
+    title: "Upload public SSH key to access worker nodes"
+    description: "Public SSH key will be used to authorize ssh connection to worker nodes"
+
+  min_number_of_nodes:
+    type: integer
+    title: "Set minimum number of nodes in the node pool"
+    description: "Minimum number of nodes in the node pool"
+    minimum: 3
+    maximum: 5
+    default: 3
+    required: true
+
+  max_number_of_nodes:
+    type: integer
+    title: "Set maximum number of nodes in the node pool"
+    description: "Maximum number of nodes in the node pool"
+    minimum: 5
+    maximum: 10
+    default: 5
+    required: true
+  
+  gitlab_runner_instances:
+    type: integer
+    title: "Set number of gitlab runners"
+    description: "Specify the number of gitlab runners to be deployed to OKE cluster"
+    minimum: 1
+    maximum: 5
+    default: 1
+    required: true
+
+  gitlab_runner_namespace:
+    type: string
+    title: "Set gitlab runner deployment namespace"
+    description: "Namespace to use for gitlab runners deployment."
+    pattern: "^(?:[a-z0-9][a-z0-9]?|[a-z0-9][a-z0-9-]{0,61}[a-z0-9])$"
+    required: true
+    default: "default"
+
+  gitlab_runner_token:
+    type: string
+    title: "Set gitlab runner token"
+    description: "Gitlab registration token."
+    required: true
+    default: "GitlabRunner-TOKEN"
+
+outputs:
+  cluster_context_setup:
+    title: "OKE context setup (Cloud Shell)"
+    displayText: ${Messages.solutionsHub.solutions.ociDevTools.outputs.cluster_context_setup.displayText()}
+    type: string
+    visible: true
+
+  list_gr_deployments:
+    title: "List deployments"
+    displayText: ${Messages.solutionsHub.solutions.ociDevTools.outputs.list_gr_deployments.displayText()}
+    type: string
+    visible: true

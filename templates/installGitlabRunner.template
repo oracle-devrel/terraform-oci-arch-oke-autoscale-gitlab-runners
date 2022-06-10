@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+NAMESPACE=${namespace}
+
+
+if ! command -v helm &> /dev/null
+then
+  echo "helm not installed"
+  exit
+fi
+
+mkdir -p "${gitlab_runner_name}"
+cd "${gitlab_runner_name}"
+cat > "${gitlab_runner_name}.cfg" <<'HERELIMIT'
+${config}
+HERELIMIT
+
+if [ $? -eq 1 ]
+then
+  echo "could not change directory: ${gitlab_runner_name}"
+  exit
+fi
+
+if [ ! -d gitlab-runner ]
+then
+  helm repo add gitlab https://charts.gitlab.io
+  helm pull --untar gitlab/gitlab-runner
+else
+  echo "gitlab-runner directory already exist"
+fi
+
+
+if helm list -q 2> /dev/null | grep ${gitlab_runner_name}
+then
+  helm upgrade --namespace ${namespace} ${gitlab_runner_name} gitlab/gitlab-runner%{ if length(values)>0 }%{ for val in values } --set ${val}%{ endfor }%{ endif } --set-file runners.config=${gitlab_runner_name}.cfg
+else
+  helm install --namespace ${namespace} ${gitlab_runner_name} gitlab/gitlab-runner%{ if length(values)>0 }%{ for val in values } --set ${val}%{ endfor }%{ endif } --set-file runners.config=${gitlab_runner_name}.cfg
+fi
+
+if [ $? -eq 0 ]
+then
+  echo "gitlab runner deployment finished"
+else
+  echo "could not deploy gitlab runner"
+fi
