@@ -65,6 +65,18 @@ Now, you'll want a local copy of this repo. You can make that with the commands:
     ls
 ```
 
+### Install helm
+
+Required for gitlab runners deployment to OKE using helm charts.
+
+```
+    $ curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    $ chmod 700 get_helm.sh
+    $ ./get_helm.sh
+```
+
+[HELM installation guide](https://helm.sh/docs/intro/install/)
+
 ### Prerequisites
 First off, you'll need to do some pre-deploy setup.  That's all detailed [here](https://github.com/cloud-partners/oci-prerequisites).
 
