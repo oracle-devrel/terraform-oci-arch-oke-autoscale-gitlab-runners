@@ -9,15 +9,27 @@ locale: "en"
 # Variable Groups
 #################
 variableGroups:
+- title: "General Configuration"
+  visible: false
+  variables:
+    - tenancy_ocid
+    - region
+    - private_key_path
+    - release  
+    - worker_default_image_name
+    - network_cidrs
 
-- title: Resource placing
+- title: Required Variables
   visible: true  
   variables:
-    - compartment_id
+    - compartment_ocid
     - use_existing_networking
+    - show_advanced
 
 - title: Gitlab Runner Setup
-  visible: true  
+  visible: 
+      and:
+        - show_advanced 
   variables:
     - gitlab_runner_instances
     - gitlab_runner_namespace
@@ -25,7 +37,10 @@ variableGroups:
 
 
 - title: Networking Setup
-  visible: ${use_existing_networking}
+  visible: 
+      and:
+        - show_advanced
+        - use_existing_networking
   variables:
     - vcnCompartment
     - vcn_id
@@ -36,16 +51,20 @@ variableGroups:
     - servicesSubnetCompartment
     - services_subnet_id
     
-- title: OKE cluster setup
-  visible: true
+- title: OKE Cluster Configuration
+  visible: 
+      and:
+        - show_advanced 
   variables:
     - cluster_name
     - kubernetes_version
     - oke_public_endpoint
     - is_kubernetes_dashboard_enabled
 
-- title: Worker nodes setup
-  visible: true
+- title: OKE Worker Nodes Configuration
+  visible: 
+      and:
+        - show_advanced 
   variables:
     - pool_name
     - worker_public_key
@@ -55,20 +74,13 @@ variableGroups:
     - worker_bv_size
     - worker_image_id
 
-- title: OKE worker pool autoscaler setup
-  visible: true
+- title: OKE Worker Pool Autoscaler Configuration
+  visible: 
+      and:
+        - show_advanced 
   variables:
     - min_number_of_nodes
     - max_number_of_nodes
-
-- title: Internal Variables
-  visible: false
-  variables:
-    - region
-    - tenancy_ocid
-    - compartment_ocid
-    - worker_default_image_name
-    - network_cidrs
 
 ######################
 # Variable Definitions
@@ -78,7 +90,7 @@ variables:
 
 # Required
 
-  compartment_id: 
+  compartment_ocid: 
     type: oci:identity:compartment:id
     title: "Select the compartment where to deploy resources"
     description: "Compartment where all resources reated to this deployment will be created."
@@ -90,7 +102,14 @@ variables:
     description: "Leave this option uncheck and networking resources will be created automatically."
     visible: true
     default: false
-  
+
+  show_advanced:
+    type: boolean
+    title: "Show advanced options?"
+    description: "Shows advanced options."
+    visible: true
+    default: false
+    
   vcnCompartment: 
     type: oci:identity:compartment:id
     title: "Select existing VCN compartment"
@@ -193,7 +212,7 @@ variables:
     description: "Compute shape to use for worker nodes"
     required: true
     dependsOn:
-      compartmentId: ${compartment_id}
+      compartmentId: ${compartment_ocid}
 
   worker_flex_ocpu:
     type: integer
@@ -251,7 +270,7 @@ variables:
     description: "OS image to use for worker nodes"
     required: true
     dependsOn:
-      compartmentId: ${compartment_id}
+      compartmentId: ${compartment_ocid}
       shape: ${worker_shape}
       operatingSystem: "Oracle Linux" 
 
