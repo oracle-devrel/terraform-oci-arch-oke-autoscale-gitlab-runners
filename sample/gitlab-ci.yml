@@ -1,0 +1,14 @@
+default:
+  image: alpine:latest
+variables:
+  KUBERNETES_CPU_REQUEST: 1
+  KUBERNETES_MEMORY_REQUEST: 4000M
+
+stages:
+  - build
+run-build:
+  tags:
+    - demo
+  stage: build
+  script:
+      - sleep 600

@@ -1,32 +1,46 @@
-# terraform-oci-arch-oke-autoscale-gitlab-runners
+# One-click gitlab runner deployment to OKE with node pool autoscaler enabled
 
-[![License: UPL](https://img.shields.io/badge/license-UPL-green)](https://img.shields.io/badge/license-UPL-green) [![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=oracle-devrel_terraform-oci-arch-oke-autoscale-gitlab-runners)](https://sonarcloud.io/dashboard?id=oracle-devrel_terraform-oci-arch-oke-autoscale-gitlab-runners)
+## Overview
 
-## THIS IS A NEW, BLANK REPO THAT IS NOT READY FOR USE YET.  PLEASE CHECK BACK SOON!
+This TF code will create an OKE cluster with all dependent resources (networking, worker node-pool), deploy cluster autoscalling and Gitlab runners. 
 
-## Introduction
-MISSING
+OKE cluster autoscaling is based on deployments resource booking. When booked resources exceed available resources (CPU, memory) on worker nodes, new worker nodes are added automatically to the cluster up to `max_number_of_nodes:10`. When cluster resources are not utilized, number of worker nodes will be decresed down to `min_number_of_nodes:3`.
 
-## Getting Started
-MISSING
+Gitlab runners will handle pending CI/CD jobs and will book, by default, 0.2 CPU and 512M RAM. These values can be overriden using `KUBERNETES_CPU_REQUEST` and `KUBERNETES_MEMORY_REQUEST` variables. Default values can be modified in `locals.tf`.
 
-### Prerequisites
-MISSING
+## Prerequisites:
 
-## Notes/Issues
-MISSING
+1. OCI account with rights to:
+    - manage dynamic groups
+    - manage policies
+    - manage network resources
+    - manage OKE clusters
+    - manage compute resources
+    - manage resource manager service
 
-## URLs
-* Nothing at this time
+    **Note:** 
 
-## Contributing
-This project is open source.  Please submit your contributions by forking this repository and submitting a pull request!  Oracle appreciates any contributions that are made by the open source community.
+    - If you don't have access to an OCI tenancy you can register [here](https://www.oracle.com/cloud/free/) for a free trial.
+    
+    - In case you plan to use existing OCI network resources, make sure [these](https://docs.oracle.com/en-us/iaas/Content/ContEng/Concepts/contengnetworkconfig.htm#securitylistconfig) requirements are met.
 
-## License
-Copyright (c) 2022 Oracle and/or its affiliates.
+2. Gitlab account.
+    - required for Gitlab Runner registration token
 
-Licensed under the Universal Permissive License (UPL), Version 1.0.
+## Deployment:
 
-See [LICENSE](LICENSE) for more details.
+You may use below link and take advantage of one click deployment to Oracle Cloud via OCI Resource Manager Service.
 
-ORACLE AND ITS AFFILIATES DO NOT PROVIDE ANY WARRANTY WHATSOEVER, EXPRESS OR IMPLIED, FOR ANY SOFTWARE, MATERIAL OR CONTENT OF ANY KIND CONTAINED OR PRODUCED WITHIN THIS REPOSITORY, AND IN PARTICULAR SPECIFICALLY DISCLAIM ANY AND ALL IMPLIED WARRANTIES OF TITLE, NON-INFRINGEMENT, MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE.  FURTHERMORE, ORACLE AND ITS AFFILIATES DO NOT REPRESENT THAT ANY CUSTOMARY SECURITY REVIEW HAS BEEN PERFORMED WITH RESPECT TO ANY SOFTWARE, MATERIAL OR CONTENT CONTAINED OR PRODUCED WITHIN THIS REPOSITORY. IN ADDITION, AND WITHOUT LIMITING THE FOREGOING, THIRD PARTIES MAY HAVE POSTED SOFTWARE, MATERIAL OR CONTENT TO THIS REPOSITORY WITHOUT ANY REVIEW. USE AT YOUR OWN RISK. 
+[![Deploy to OCI](https://docs.oracle.com/en-us/iaas/Content/Resources/Images/deploy-to-oracle-cloud.svg)](https://cloud.oracle.com/resourcemanager/stacks/create?zipUrl=https://github.com/robo-cap/oci-oke-autoscale-gitlab-runners/archive/refs/tags/v0.0.1.zip)
+
+
+## Check status
+
+Connect to OCI cloud shell and execute below commands:
+
+    $ oci ce cluster create-kubeconfig --cluster-id <oke_cluster_id>
+    $ kubectl get deployments --all-namespaces
+
+Confirm deployed gitlab runners are available in runners section of Gitlab Project CI/CD Settings.
+
+Validate the deployment using `gitlab-ci.yml` file in `samples` directory.
