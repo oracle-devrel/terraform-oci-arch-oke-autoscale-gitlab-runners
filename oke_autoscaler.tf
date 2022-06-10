@@ -7,7 +7,7 @@ data "template_file" "autoscaler_deployment" {
       autoscaler_image = "${lookup(local.autoscaler_image, var.kubernetes_version)}"
       min_nodes        = "${var.min_number_of_nodes}"
       max_nodes        = "${var.max_number_of_nodes}"
-      node_pool_id     = "${oci_containerengine_node_pool.nodepool.id}"
+      node_pool_id     = "${module.oci-oke.node_pool.id}"
   }
 }
 
@@ -18,11 +18,11 @@ resource "local_file" "autoscaler_deployment" {
 
 resource "null_resource" "deploy_autoscaler" {
   provisioner "local-exec" {
-    command = "oci ce cluster create-kubeconfig --region ${var.region} --cluster-id ${oci_containerengine_cluster.k8_cluster.id}"
+    command = "oci ce cluster create-kubeconfig --region ${var.region} --cluster-id ${module.oci-oke.cluster.id}"
   }
   
   provisioner "local-exec" {
     command = "kubectl apply -f ${local_file.autoscaler_deployment.filename}"
   }
-  depends_on = [oci_containerengine_cluster.k8_cluster, oci_containerengine_node_pool.nodepool, local_file.autoscaler_deployment]
+  depends_on = [module.oci-oke.cluster, local_file.autoscaler_deployment]
 }

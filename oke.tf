@@ -23,71 +23,38 @@ resource "oci_core_network_security_group" "oke_nsg" {
     vcn_id         = var.vcn_id
 }
 
+module "oci-oke" {
+  providers        = { oci = oci.targetregion }
+  source           = "github.com/oracle-devrel/terraform-oci-arch-oke"
+  tenancy_ocid     = var.tenancy_ocid
+  compartment_ocid = var.compartment_ocid
+  oke_cluster_name = var.cluster_name
+  k8s_version      = var.kubernetes_version
+  pool_name        = var.pool_name
+  node_shape       = var.worker_shape
+  node_ocpus       = var.worker_flex_ocpu
+  node_memory      = var.worker_flex_memory
+  node_count       = var.min_number_of_nodes
+  ssh_public_key   = var.worker_public_key
+  node_image_id    = var.worker_image_id != "" ? var.worker_image_id : data.oci_core_images.default_images.images[0].id
 
-resource "oci_containerengine_cluster" "k8_cluster" {
-  provider           = oci.targetregion
-  compartment_id     = var.compartment_ocid
-  kubernetes_version = var.kubernetes_version
-  name               = var.cluster_name
-  vcn_id             = var.use_existing_networking ? var.vcn_id : oci_core_virtual_network.oke_vcn[0].id
-  endpoint_config {
-    is_public_ip_enabled = var.oke_public_endpoint
-    subnet_id            = var.use_existing_networking ? var.endpoint_subnet_id : oci_core_subnet.oke_k8s_endpoint_subnet[0].id
-    nsg_ids              = var.use_existing_networking ? tolist([oci_core_network_security_group.oke_nsg[0].id]) : []
-  }
-  options {
-    add_ons {
-      is_kubernetes_dashboard_enabled = var.is_kubernetes_dashboard_enabled
-    }
+  node_pool_boot_volume_size_in_gbs = var.worker_bv_size
 
-    kubernetes_network_config {
-      pods_cidr     = lookup(var.network_cidrs, "PODS-CIDR")
-      services_cidr = lookup(var.network_cidrs, "KUBERNETES-SERVICE-CIDR")
-    }
-
-    service_lb_subnet_ids = var.use_existing_networking ? tolist([var.services_subnet_id,]) : tolist([oci_core_subnet.oke_lb_subnet[0].id,])
-  }
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
-}
-
-
-resource "oci_containerengine_node_pool" "nodepool" {
-  provider           = oci.targetregion
-  compartment_id     = var.compartment_ocid
-  cluster_id         = oci_containerengine_cluster.k8_cluster.id
-
-  kubernetes_version = oci_containerengine_cluster.k8_cluster.kubernetes_version
-  name               = var.pool_name
-
-  node_config_details {
-      dynamic "placement_configs" {
-        iterator = pc
-        for_each = data.oci_identity_availability_domains.ads.availability_domains
-        content {
-            availability_domain = pc.value.name
-            subnet_id           = var.use_existing_networking ? var.workers_subnet_id : oci_core_subnet.oke_nodes_subnet[0].id
-        }
-    }
-    size = var.min_number_of_nodes
-  }
-
-  node_source_details {
-    image_id                = var.worker_image_id != "" ? var.worker_image_id : data.oci_core_images.default_images.images[0].id
-    source_type             = "image"
-    boot_volume_size_in_gbs = var.worker_bv_size
-  }
-
-  node_shape    = var.worker_shape
-  dynamic "node_shape_config" {
-      iterator  = ns
-      for_each  = contains(["VM.Standard.E3.Flex", "VM.Standard.E4.Flex", "VM.Standard.A1.Flex"], var.worker_shape) ? [true] : []
-      content {
-          memory_in_gbs = var.worker_flex_memory
-          ocpus         = var.worker_flex_ocpu
-      }
-  }
-
-  ssh_public_key = var.worker_public_key
-  defined_tags   = { "oke-${random_id.tag.hex}.autoscaler"= "true", "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  pods_cidr        = lookup(var.network_cidrs, "PODS-CIDR")
+  services_cidr    = lookup(var.network_cidrs, "KUBERNETES-SERVICE-CIDR")
+  
+  cluster_options_add_ons_is_kubernetes_dashboard_enabled = var.is_kubernetes_dashboard_enabled
+  
+  use_existing_vcn              = true
+  vcn_id                        = var.use_existing_networking ? var.vcn_id : oci_core_virtual_network.oke_vcn[0].id
+  is_api_endpoint_subnet_public = true
+  api_endpoint_subnet_id        = var.use_existing_networking ? var.endpoint_subnet_id : oci_core_subnet.oke_k8s_endpoint_subnet[0].id
+  api_endpoint_nsg_ids          = var.use_existing_networking ? tolist([oci_core_network_security_group.oke_nsg[0].id]) : []
+  is_lb_subnet_public           = true                            
+  lb_subnet_id                  = var.use_existing_networking ? var.services_subnet_id : oci_core_subnet.oke_lb_subnet[0].id
+  is_nodepool_subnet_public     = false
+  nodepool_subnet_id            = var.use_existing_networking ? var.workers_subnet_id : oci_core_subnet.oke_nodes_subnet[0].id
+  
+  defined_tags                  = { "oke-${random_id.tag.hex}.autoscaler"= "true", "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
 }
 

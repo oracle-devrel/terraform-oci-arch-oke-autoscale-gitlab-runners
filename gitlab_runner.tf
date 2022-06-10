@@ -15,7 +15,7 @@ resource "local_file" "gitlab_runner_installer" {
 resource null_resource "ensure_cluster_access" {
   
   provisioner "local-exec" {
-    command = "oci ce cluster create-kubeconfig --region ${var.region} --cluster-id ${oci_containerengine_cluster.k8_cluster.id}"
+     command = "oci ce cluster create-kubeconfig --region ${var.region} --cluster-id ${module.oci-oke.cluster.id}"
   }
 
   triggers = {
