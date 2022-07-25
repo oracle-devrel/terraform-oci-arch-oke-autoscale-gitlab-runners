@@ -3,17 +3,15 @@
 
 resource "oci_core_virtual_network" "oke_vcn" {
   count          = var.use_existing_networking ? 0 : 1
-  provider       = oci.targetregion
   cidr_block     = lookup(var.network_cidrs, "VCN-CIDR")
   compartment_id = var.compartment_ocid
   display_name   = "OKE_VCN"
   dns_label      = "autoscaleokevcn"
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags   = local.defined_tags
 }
 
 resource "oci_core_subnet" "oke_k8s_endpoint_subnet" {
   count                      = var.use_existing_networking ? 0 : 1
-  provider                   = oci.targetregion
   cidr_block                 = lookup(var.network_cidrs, "ENDPOINT-SUBNET-REGIONAL-CIDR")
   compartment_id             = var.compartment_ocid
   display_name               = "oke-k8s-endpoint-subnet"
@@ -23,12 +21,11 @@ resource "oci_core_subnet" "oke_k8s_endpoint_subnet" {
   route_table_id             = oci_core_route_table.oke_public_route_table[0].id
   dhcp_options_id            = oci_core_virtual_network.oke_vcn[0].default_dhcp_options_id
   security_list_ids          = [oci_core_security_list.oke_endpoint_security_list[0].id]
-  defined_tags               = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags               = local.defined_tags
 }
 
 resource "oci_core_subnet" "oke_nodes_subnet" {
   count                      = var.use_existing_networking ? 0 : 1
-  provider                   = oci.targetregion
   cidr_block                 = lookup(var.network_cidrs, "SUBNET-REGIONAL-CIDR")
   compartment_id             = var.compartment_ocid
   display_name               = "oke-nodes-subnet"
@@ -38,12 +35,11 @@ resource "oci_core_subnet" "oke_nodes_subnet" {
   route_table_id             = oci_core_route_table.oke_private_route_table[0].id
   dhcp_options_id            = oci_core_virtual_network.oke_vcn[0].default_dhcp_options_id
   security_list_ids          = [oci_core_security_list.oke_nodes_security_list[0].id]
-  defined_tags               = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags               = local.defined_tags
 }
 
 resource "oci_core_subnet" "oke_lb_subnet" {
   count                      = var.use_existing_networking ? 0 : 1
-  provider                   = oci.targetregion
   cidr_block                 = lookup(var.network_cidrs, "LB-SUBNET-REGIONAL-CIDR")
   compartment_id             = var.compartment_ocid
   display_name               = "oke-lb-subnet"
@@ -53,12 +49,11 @@ resource "oci_core_subnet" "oke_lb_subnet" {
   route_table_id             = oci_core_route_table.oke_public_route_table[0].id
   dhcp_options_id            = oci_core_virtual_network.oke_vcn[0].default_dhcp_options_id
   security_list_ids          = [oci_core_security_list.oke_lb_security_list[0].id]
-  defined_tags               = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags               = local.defined_tags
 }
 
 resource "oci_core_route_table" "oke_private_route_table" {
   count          = var.use_existing_networking ? 0 : 1
-  provider       = oci.targetregion
   compartment_id = var.compartment_ocid
   vcn_id         = oci_core_virtual_network.oke_vcn[0].id
   display_name   = "oke-private-route-table"
@@ -75,12 +70,11 @@ resource "oci_core_route_table" "oke_private_route_table" {
     destination_type  = "SERVICE_CIDR_BLOCK"
     network_entity_id = oci_core_service_gateway.oke_service_gateway[0].id
   }
-  defined_tags               = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags = local.defined_tags
 }
 
 resource "oci_core_route_table" "oke_public_route_table" {
   count          = var.use_existing_networking ? 0 : 1
-  provider       = oci.targetregion
   compartment_id = var.compartment_ocid
   vcn_id         = oci_core_virtual_network.oke_vcn[0].id
   display_name   = "oke-public-route-table"
@@ -91,44 +85,40 @@ resource "oci_core_route_table" "oke_public_route_table" {
     destination_type  = "CIDR_BLOCK"
     network_entity_id = oci_core_internet_gateway.oke_internet_gateway[0].id
   }
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags = local.defined_tags
 }
 
 resource "oci_core_nat_gateway" "oke_nat_gateway" {
   count          = var.use_existing_networking ? 0 : 1
-  provider       = oci.targetregion
   block_traffic  = "false"
   compartment_id = var.compartment_ocid
   display_name   = "oke-nat-gateway"
   vcn_id         = oci_core_virtual_network.oke_vcn[0].id
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags   = local.defined_tags
 }
 
 resource "oci_core_internet_gateway" "oke_internet_gateway" {
   count          = var.use_existing_networking ? 0 : 1
-  provider       = oci.targetregion
   compartment_id = var.compartment_ocid
   display_name   = "oke-internet-gateway"
   enabled        = true
   vcn_id         = oci_core_virtual_network.oke_vcn[0].id
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags   = local.defined_tags
 }
 
 resource "oci_core_service_gateway" "oke_service_gateway" {
   count          = var.use_existing_networking ? 0 : 1
-  provider       = oci.targetregion
   compartment_id = var.compartment_ocid
   display_name   = "oke-service-gateway"
   vcn_id         = oci_core_virtual_network.oke_vcn[0].id
   services {
     service_id = lookup(data.oci_core_services.all_services.services[0], "id")
   }
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags = local.defined_tags
 }
 
 resource "oci_core_security_list" "oke_nodes_security_list" {
   count          = var.use_existing_networking ? 0 : 1
-  provider       = oci.targetregion
   compartment_id = var.compartment_ocid
   display_name   = "oke-nodes-wrk-seclist"
   vcn_id         = oci_core_virtual_network.oke_vcn[0].id
@@ -249,21 +239,19 @@ resource "oci_core_security_list" "oke_nodes_security_list" {
     }
   }
 
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags = local.defined_tags
 }
 
 resource "oci_core_security_list" "oke_lb_security_list" {
   count          = var.use_existing_networking ? 0 : 1
-  provider       = oci.targetregion
   compartment_id = var.compartment_ocid
   display_name   = "oke-lb-seclist"
   vcn_id         = oci_core_virtual_network.oke_vcn[0].id
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags   = local.defined_tags
 }
 
 resource "oci_core_security_list" "oke_endpoint_security_list" {
   count          = var.use_existing_networking ? 0 : 1
-  provider       = oci.targetregion
   compartment_id = var.compartment_ocid
   display_name   = "oke-k8s-api-endpoint-seclist"
   vcn_id         = oci_core_virtual_network.oke_vcn[0].id
@@ -353,43 +341,41 @@ resource "oci_core_security_list" "oke_endpoint_security_list" {
     }
   }
 
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags = local.defined_tags
 }
 
 
 # Create NSG when using user defined network to ensure access to OKE Endpoint
 resource "oci_core_network_security_group_security_rule" "oke_nsg_rule_6443" {
-    provider                  = oci.targetregion
-    count                     = var.use_existing_networking ? 1 : 0
-    network_security_group_id = oci_core_network_security_group.oke_nsg[0].id
-    direction                 = "INGRESS"
-    protocol                  = "6"
+  count                     = var.use_existing_networking ? 1 : 0
+  network_security_group_id = oci_core_network_security_group.oke_nsg[0].id
+  direction                 = "INGRESS"
+  protocol                  = "6"
 
-    source                    = "0.0.0.0/0"
-    source_type               = "CIDR_BLOCK"
-    stateless                 = false
-    tcp_options {
-        destination_port_range {
-            max = "6443"
-            min = "6443"
-        }
+  source      = "0.0.0.0/0"
+  source_type = "CIDR_BLOCK"
+  stateless   = false
+  tcp_options {
+    destination_port_range {
+      max = "6443"
+      min = "6443"
     }
+  }
 }
 
 resource "oci_core_network_security_group_security_rule" "oke_nsg_rule_12250" {
-    provider                  = oci.targetregion
-    count                     = var.use_existing_networking ? 1 : 0
-    network_security_group_id = oci_core_network_security_group.oke_nsg[0].id
-    direction                 = "INGRESS"
-    protocol                  = "6"
+  count                     = var.use_existing_networking ? 1 : 0
+  network_security_group_id = oci_core_network_security_group.oke_nsg[0].id
+  direction                 = "INGRESS"
+  protocol                  = "6"
 
-    source                    = "0.0.0.0/0"
-    source_type               = "CIDR_BLOCK"
-    stateless                 = false
-    tcp_options {
-        destination_port_range {
-            max = "12250"
-            min = "12250"
-        }
+  source      = "0.0.0.0/0"
+  source_type = "CIDR_BLOCK"
+  stateless   = false
+  tcp_options {
+    destination_port_range {
+      max = "12250"
+      min = "12250"
     }
+  }
 }
