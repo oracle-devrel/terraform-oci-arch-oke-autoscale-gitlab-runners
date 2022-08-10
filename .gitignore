@@ -44,8 +44,6 @@ Temporary Items
 .crt
 .csr
 .pem
-gr-0/gitlab-runner/
+gr-0/
 
-autoscaler.yaml
-
-install_gitlab-runner_0.sh
+terraform-oci-arch-oke-autoscale-gitlab-runners/
