@@ -44,3 +44,8 @@ Temporary Items
 .crt
 .csr
 .pem
+gr-0/gitlab-runner/
+
+autoscaler.yaml
+
+install_gitlab-runner_0.sh
