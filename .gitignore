@@ -44,3 +44,6 @@ Temporary Items
 .crt
 .csr
 .pem
+gr-0/
+
+terraform-oci-arch-oke-autoscale-gitlab-runners/
