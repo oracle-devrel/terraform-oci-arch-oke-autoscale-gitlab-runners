@@ -30,7 +30,7 @@ resource null_resource "install_gitlab_runner" {
   }
 
   provisioner "local-exec" {
-    command = "/bin/bash install_gitlab-runner_${count.index}.sh"
+    command     = "/bin/bash install_gitlab-runner_${count.index}.sh"
   }
   
   depends_on = [local_file.gitlab_runner_installer, null_resource.deploy_autoscaler, null_resource.ensure_cluster_access]

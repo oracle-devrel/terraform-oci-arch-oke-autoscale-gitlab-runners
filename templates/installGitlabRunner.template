@@ -2,7 +2,6 @@
 
 NAMESPACE=${namespace}
 
-
 if ! command -v helm &> /dev/null
 then
   echo "helm not installed"

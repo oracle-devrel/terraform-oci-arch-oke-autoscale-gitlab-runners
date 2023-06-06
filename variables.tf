@@ -105,7 +105,11 @@ variable "cluster_name" {
 variable "kubernetes_version" {
   type        = string
   description = "Kubernetes version"
-  default     = "v1.22.5"
+  default     = "v1.26.2"
+}
+
+variable "cluster_type" {
+  default = "enhanced"
 }
 
 variable "oke_public_endpoint" {
