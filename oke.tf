@@ -38,7 +38,6 @@ module "oci-oke" {
   node_memory      = var.worker_flex_memory
   node_count       = var.min_number_of_nodes
   ssh_public_key   = var.worker_public_key
-  node_image_id    = var.worker_image_id != "" ? var.worker_image_id : data.oci_core_images.default_images.images[0].id
 
   node_pool_boot_volume_size_in_gbs = var.worker_bv_size
 

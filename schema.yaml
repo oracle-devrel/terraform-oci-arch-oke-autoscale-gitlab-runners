@@ -177,10 +177,10 @@ variables:
     type: enum
     title: "Select Kubernetes version"
     description: "Kubernetes version to be deployed"
-    default: "v1.22.5"
+    default: "v1.26.2"
     enum:
-      - v1.22.5
-      - v1.21.5
+      - v1.26.2
+      - v1.25.4
 
   oke_public_endpoint:
     type: boolean
