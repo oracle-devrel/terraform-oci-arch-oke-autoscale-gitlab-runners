@@ -108,6 +108,10 @@ variable "kubernetes_version" {
   default     = "v1.26.2"
 }
 
+variable "cluster_type" {
+  default = "enhanced"
+}
+
 variable "oke_public_endpoint" {
   type        = bool
   description = "Is OKE endpoint public?"
