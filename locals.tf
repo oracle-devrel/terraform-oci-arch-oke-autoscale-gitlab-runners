@@ -30,8 +30,7 @@ locals {
 
   # List with supported autoscaler images: https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengusingclusterautoscaler.htm
   autoscaler_image = {
-    "v1.26.2" = "iad.ocir.io/oracle/oci-cluster-autoscaler:1.25.0-6",
-    "v1.25.4" = "iad.ocir.io/oracle/oci-cluster-autoscaler:1.25.0-6"
-    "v1.24.1" = "iad.ocir.io/oracle/oci-cluster-autoscaler:1.24.0-5"
+    "v1.31.1" = "iad.ocir.io/oracle/oci-cluster-autoscaler:1.31.0-1",
+    "v1.30.1" = "iad.ocir.io/oracle/oci-cluster-autoscaler:1.30.2-10"
   }
 }

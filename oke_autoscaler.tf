@@ -4,7 +4,7 @@
 locals {
   autoscaler_deployment = templatefile("${path.module}/templates/autoscaler.template.yaml",
     {
-      autoscaler_image = "${lookup(local.autoscaler_image, var.kubernetes_version)}"
+      autoscaler_image = "${lookup(local.autoscaler_image, var.kubernetes_version, var.default_autoscaler_image)}"
       min_nodes        = "${var.min_number_of_nodes}"
       max_nodes        = "${var.max_number_of_nodes}"
       node_pool_id     = "${module.oci-oke.node_pool.id}"

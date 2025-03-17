@@ -94,6 +94,12 @@ variable "max_number_of_nodes" {
   default     = 10
 }
 
+variable "default_autoscaler_image" {
+  type        = string
+  description = "The default cluster autoscaler image to be used."
+  default     = "registry.k8s.io/autoscaling/cluster-autoscaler:v1.32.0"
+}
+
 ## OKE cluster parameters
 
 variable "cluster_name" {
@@ -105,7 +111,7 @@ variable "cluster_name" {
 variable "kubernetes_version" {
   type        = string
   description = "Kubernetes version"
-  default     = "v1.26.2"
+  default     = "v1.31.1"
 }
 
 variable "cluster_type" {

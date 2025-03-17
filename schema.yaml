@@ -175,13 +175,12 @@ variables:
     required: true
 
   kubernetes_version:
-    type: enum
-    title: "Select Kubernetes version"
+    type: string
+    title: "Set the desired Kubernetes version"
     description: "Kubernetes version to be deployed"
-    default: "v1.26.2"
-    enum:
-      - v1.26.2
-      - v1.25.4
+    default: "v1.31.1"
+    pattern: "^v1\\.\\d\\d\\.\\d+$"
+    required: true
 
   cluster_type:
         type: enum
